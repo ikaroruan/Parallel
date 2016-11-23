@@ -8,6 +8,7 @@
 
 #include <iostream>
 #include "List_node.h"
+#include <omp.h>
 
 template<typename T>
 class Linked_list
@@ -52,6 +53,7 @@ class Linked_list
 
 	// Access the member variables.
 	int size();
+	List_node<T>* index(int pos);
 	List_node<T>* front();
 	List_node<T>* back();
 	void print();
@@ -60,6 +62,8 @@ class Linked_list
 	int _size;
 	List_node<T>* _front;
 	List_node<T>* _back;
+	int _number_of_threads;
+	omp_lock_t m;
 	
 	// Modifiers for the member variables.
 	void size(int num);
