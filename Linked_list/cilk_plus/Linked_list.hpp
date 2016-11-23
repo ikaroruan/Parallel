@@ -179,22 +179,40 @@ void Linked_list<T>::remove(List_node<T>* node)
 }
 
 template<typename T>
-List_node<T>* Linked_list<T>::find(T value)
+List_node<T>* Linked_list<T>::index(int pos)
 {
 	List_node<T>* current = front();
-	List_node<T>* node = nullptr;
-
-	while(current != nullptr){
-		if(current->get_value() == value){
-			if(node == nullptr)
-				node = current;
-				current = nullptr;
-			}
-			else{
-				current = current->get_next();
-			}
+	for(int i = 0; i <= pos; ++i){
+		if(current != nullptr)
+			current = current->get_next();
 	}
 
+	return current;
+}
+
+template<typename T>
+List_node<T>* Linked_list<T>::find(T value)
+{
+	List_node<T>* node = nullptr;
+
+	/*while(current != nullptr){
+		if(current->get_value() == value){
+			//if(node == nullptr){
+				node = current;
+			//}
+			}
+		current = current->get_next();
+	}*/
+
+	cilk_for(int i = 0; i < size(); ++i){
+		if(index(i) != nullptr){
+			if(index(i)->get_value() == value){
+				m.lock();
+				node = index(i);
+				m.unlock();
+			}
+		}
+	}
 	return node;
 }
 
