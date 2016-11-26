@@ -46,7 +46,7 @@ class Linked_list
 	// POST: Searches the node or value on the list.
 	// RETURN: Returns the respective value or node it is on the list, and nullptr otherwise.
 	List_node<T>* find(T value);
-	void find_parallel(T value, List_node<T>* node);
+	void find_parallel(T value, List_node<T>* node,List_node<T>* start, List_node<T>* end);
 	List_node<T>* find(List_node<T>* node);
 
 	// PRE: Value or node to be checked if it is on the list.
@@ -59,6 +59,7 @@ class Linked_list
 	int size();
 	List_node<T>* front();
 	List_node<T>* back();
+	List_node<T>* index(int pos);
 	void print();
 	
 	private:
