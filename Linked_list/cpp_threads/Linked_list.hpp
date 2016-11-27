@@ -133,12 +133,12 @@ template<typename T>
 void Linked_list<T>::remove(T value)
 {
 	List_node<T>* node = find(value);
-	if(node == nullptr)
+	/*if(node == nullptr)
 		std::cout << "NULL!\n";
 	else if(node->get_value() == value)
 		std::cout << "OK!\n";
 	else
-		std::cout << "WRONG!\n";
+		std::cout << "WRONG!\n";*/
 	remove(node);
 }
 
@@ -169,7 +169,7 @@ template<typename T>
 List_node<T>* Linked_list<T>::index(int pos)
 {
 	List_node<T>* current = front();
-	for(int i = 0; i <= pos; ++i){
+	for(int i = 0; i < pos; ++i){
 		if(current != nullptr)
 			current = current->get_next();
 	}
@@ -178,11 +178,12 @@ List_node<T>* Linked_list<T>::index(int pos)
 }
 
 template<typename T>
-void Linked_list<T>::find_parallel(T value, List_node<T>* node, List_node<T>* start, List_node<T>* end)
+List_node<T>* Linked_list<T>::find_parallel(T value, List_node<T>* start, List_node<T>* end)
 {
 	List_node<T>* current = start;
-	if(end != nullptr)
-		end = end->get_next();
+	List_node<T>* node = nullptr;
+	//if(end != nullptr)
+	//	end = end->get_next();
 	while(current != end){
 		if(current->get_value() == value){
 			//if(node == nullptr){
@@ -193,15 +194,19 @@ void Linked_list<T>::find_parallel(T value, List_node<T>* node, List_node<T>* st
 			}
 		current = current->get_next();
 	}
+//	m.lock();
+//	if(node != nullptr)
+//		std::cout << "   value = " << value << "   node_value = " << node->get_value() << "\n";
+//	m.unlock();
 
-	//return node;
+	return node;
 }
 
 template<typename T>
 List_node<T>* Linked_list<T>::find(T value)
 {
 	std::thread t[NUMBER_OF_THREADS];
-	List_node<T>** node = new List_node<T>*[NUMBER_OF_THREADS];
+	List_node<T>* node[NUMBER_OF_THREADS];
 	List_node<T>* ans = nullptr;
 	List_node<T>* start = nullptr;
 	List_node<T>* end = nullptr;
@@ -210,21 +215,23 @@ List_node<T>* Linked_list<T>::find(T value)
 		start = index((i*size())/NUMBER_OF_THREADS);
 		end = index(((i+1)*size())/NUMBER_OF_THREADS);
 		node[i] = nullptr;
-		t[i] = std::thread(&Linked_list<T>::find_parallel, this, value, std::ref(node[i]), start, end);
+		//t[i] = std::thread(&Linked_list<T>::find_parallel, this, value, std::ref(node[i]), start, end);
+		t[i] = std::thread([=, &node](){ node[i] = find_parallel(value, start, end);});
 	}
 
 	for(int i = 0; i < NUMBER_OF_THREADS; ++i){
 		if(t[i].joinable())
 			t[i].join();
+		if(node[i] != nullptr)
+			ans = node[i];
 	}
 	
-	for(int i = 0; i < NUMBER_OF_THREADS; ++i){
+	/*for(int i = 0; i < NUMBER_OF_THREADS; ++i){
 		if(node[i] != nullptr){
 			ans = node[i];
-		std::cout << "   value = " << value << "   node_value = " << ans->get_value() << "\n";
 			break;
 		}
-	}
+	}*/
 	
 	return ans;
 }
