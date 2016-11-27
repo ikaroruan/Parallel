@@ -141,7 +141,7 @@ void Linked_list<T>::remove(T value)
 	else
 		std::cout << "WRONG!\n";
 	
-	//remove(node);
+	remove(node);
 
 	/*if(node != nullptr){
 		if(size() == 1){
@@ -190,7 +190,7 @@ template<typename T>
 List_node<T>* Linked_list<T>::index(int pos)
 {
 	List_node<T>* current = front();
-	for(int i = 0; i <= pos; ++i){
+	for(int i = 0; i < pos; ++i){
 		if(current != nullptr)
 			current = current->get_next();
 	}
@@ -201,25 +201,33 @@ List_node<T>* Linked_list<T>::index(int pos)
 template<typename T>
 List_node<T>* Linked_list<T>::find(T value)
 {
-	List_node<T>** node = new List_node<T>*[omp_get_num_threads()];
+	//omp_set_dynamic(0);
+	//omp_set_num_threads(4);
+	List_node<T>* node[4];
+	//std::cout << "Number of Threads = " << omp_get_num_threads() << "\nMax Threads =  " << omp_get_max_threads() << std::endl;
 	List_node<T>* ans = nullptr;
 	int tid;
 	int list_size = size();
-	#pragma omp parallel shared(node, list_size) private(tid)
+	List_node<T>* current = nullptr;
+	#pragma omp parallel shared(node, list_size, current, value) private(tid)
 	{
 	tid = omp_get_thread_num();
 	node[tid] = nullptr;
-	#pragma omp for
+	#pragma omp for 
 	for(int i = 0; i < list_size; ++i){
-		if(index(i) != nullptr){
-			if(index(i)->get_value() == value){
-				node[tid] = index(i);
+		current = index(i);
+		if(current != nullptr){
+			if(current->get_value() == value){
+				node[tid] = current;
+				#pragma omp critical
+				std::cout << "Got here!\n";
+	std::cout << "   value = " << value << "   value_node = " << node[tid]->get_value() << "\n";
 			}
 		}
 	}
 	}
 
-	for(int i = 0; i < _number_of_threads; ++i){
+	for(int i = 0; i < 4; ++i){
 		if(node[i] != nullptr){
 			ans = node[i];
 			break;
