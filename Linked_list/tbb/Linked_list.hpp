@@ -133,6 +133,12 @@ template<typename T>
 void Linked_list<T>::remove(T value)
 {
 	List_node<T>* node = find(value);
+	/*if(node == nullptr)
+		std::cout << "NULL!\n";
+	else if(node->get_value() != value)
+		std::cout << "WRONG!\n";
+	else
+		std::cout << "OK!\n";*/
 	remove(node);
 
 	/*if(node != nullptr){
@@ -182,7 +188,7 @@ template<typename T>
 List_node<T>* Linked_list<T>::index(int pos)
 {
 	List_node<T>* current = front();
-	for(int i = 0; i <= pos; ++i){
+	for(int i = 0; i < pos; ++i){
 		if(current != nullptr)
 			current = current->get_next();
 	}
@@ -203,17 +209,23 @@ List_node<T>* Linked_list<T>::find(T value)
 			}
 		current = current->get_next();
 	}*/
+	List_node<T>* current = nullptr;
 
-	tbb::parallel_for(0, size(), [&] (T value){
+	tbb::parallel_for(0, size(), [=, &current, &node](int j){
 	for(int i = 0; i < size(); ++i){
-		if(index(i) != nullptr){
-			if(index(i)->get_value() == value){
-				m.lock();
-				node = index(i);
-				m.unlock();
+		current = index(i);
+		if(current != nullptr){
+			if(current->get_value() == value){
+				//m.lock();
+				node = current;
+				//m.unlock();
+				//std::cout << "Got here!\n";
+				//std::cout << "    value=" << value << "   node_value=" << node->get_value() << std::endl;
 			}
 		}
 	}});
+	//if(node != nullptr)
+	//	std::cout << "    value=" << value << "   node_value=" << node->get_value() << std::endl;
 	return node;
 }
 
