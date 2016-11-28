@@ -133,6 +133,12 @@ template<typename T>
 void Linked_list<T>::remove(T value)
 {
 	List_node<T>* node = find(value);
+	if(node == nullptr)
+		std::cout << "NULL!\n";
+	else if(node->get_value() != value)
+		std::cout << "WRONG!\n";
+	else
+		std::cout << "OK!\n";
 	remove(node);
 
 	/*if(node != nullptr){
@@ -210,17 +216,22 @@ void Linked_list<T>::find_parallel(T value, List_node<T>* node, List_node<T>* st
 template<typename T>
 List_node<T>* Linked_list<T>::find(T value)
 {
-	List_node<T>** node = new List_node<T>*[__cilkrts_get_nworkers()];
+	int number_of_workers = __cilkrts_get_nworkers();
+	List_node<T>* node[number_of_workers];
+	List_node<T>* current[number_of_workers];
 	//std::cout << "Number of Workers: " << __cilkrts_get_nworkers() << "\n";
+	for(int i = 0; i < number_of_workers; ++i)
+		node[i] = nullptr;
 
-	List_node<T>* current = nullptr;
 	cilk_for(int i = 0; i < size(); ++i){
-		current = index(i);
-		if(current != nullptr){
-			if(current->get_value() == value){
+		current[__cilkrts_get_worker_number()] = index(i);
+		if(current[__cilkrts_get_worker_number()] != nullptr){
+			if(current[__cilkrts_get_worker_number()]->get_value() == value){
 				//m.lock();
-				node[__cilkrts_get_worker_number()] = current;
-				//m.unlock();
+				//std::cout << "   workerN = " << __cilkrts_get_worker_number() << "\n";
+				node[__cilkrts_get_worker_number()] = current[__cilkrts_get_worker_number()];
+		//std::cout << "   value = " << value << "   node_value = " << node[__cilkrts_get_worker_number()]->get_value() << "\n";
+		//		m.unlock();
 			}
 		}
 		else{
@@ -248,13 +259,14 @@ List_node<T>* Linked_list<T>::find(T value)
 	cilk_sync;*/
 	
 	List_node<T>* ans = nullptr;
-	for(int i = 0; 0 < __cilkrts_get_nworkers(); ++i){
+	for(int i = 0; 0 < number_of_workers; ++i){
 		if(node[i] != nullptr){
 			ans = node[i];
 			break;
 		}
 	}
-
+	//if(ans != nullptr)
+	//	std::cout << "   value = " << value << "   node_value = " << ans->get_value() << "\n";
 	return ans;
 }
 

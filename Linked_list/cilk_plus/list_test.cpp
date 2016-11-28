@@ -57,6 +57,9 @@ int main(int argc, char** argv)
 
 	if(list.size() > 0)
 		std::cerr << "ERROR: There are remaining nodes.\n";
+	//std::cout << "Printing:\n";
+	//list.print();
+	//std::cout << "\n";
 
 	/*int option = -1;
 	Linked_list<int> list;
