@@ -133,12 +133,12 @@ template<typename T>
 void Linked_list<T>::remove(T value)
 {
 	List_node<T>* node = find(value);
-	/*if(node == nullptr)
+	if(node == nullptr)
 		std::cout << "NULL!\n";
 	else if(node->get_value() != value)
 		std::cout << "WRONG!\n";
 	else
-		std::cout << "OK!\n";*/
+		std::cout << "OK!\n";
 	remove(node);
 
 	/*if(node != nullptr){
@@ -218,9 +218,13 @@ List_node<T>* Linked_list<T>::find(T value)
 			if(current->get_value() == value){
 				//m.lock();
 				node = current;
-				//m.unlock();
 				//std::cout << "Got here!\n";
 				//std::cout << "    value=" << value << "   node_value=" << node->get_value() << std::endl;
+				//m.unlock();
+				break;
+				//m.lock();
+				//std::cout << "Got here!\n";
+				//m.lock();
 			}
 		}
 	}});
