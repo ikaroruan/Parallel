@@ -9,6 +9,7 @@
 #include <iostream>
 #include "List_node.h"
 #include <omp.h>
+#include <chrono>
 
 template<typename T>
 class Linked_list
@@ -26,6 +27,7 @@ class Linked_list
 	void push_front(List_node<T>* node);
 	void push_back(T value);
 	void push_front(T value);
+	void insert(std::vector<T>& v);
 
 	// PRE: none.
 	// POST: Pops nodes or elements from the list.
@@ -51,19 +53,25 @@ class Linked_list
 	bool is_element(List_node<T>* node);
 	bool is_element(T value);
 
+	void update_info();
+
 	// Access the member variables.
 	int size();
 	List_node<T>* index(int pos);
 	List_node<T>* front();
 	List_node<T>* back();
 	void print();
+	double time = 0;
 	
 	private:
 	int _size;
 	List_node<T>* _front;
 	List_node<T>* _back;
 	int _number_of_threads;
+	int* _thread_size;
+	List_node<T>** _tbegin;
 	omp_lock_t m;
+	int _rebalance_factor;
 	
 	// Modifiers for the member variables.
 	void size(int num);

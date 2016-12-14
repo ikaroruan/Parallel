@@ -29,34 +29,44 @@ int main(int argc, char** argv)
 	std::ifstream input(filename1);
 	Linked_list<int> list;
 	int size = -1; int num = -1;
-
-	input >> size;
-	for(int i = 0; i < size; ++i){
-		input >> num;
-		list.push_back(num);
-	}
-	std::cout << "Inserted.\n";
-	input.close();
 	
 	std::chrono::high_resolution_clock::time_point start;
 	std::chrono::high_resolution_clock::time_point end;
 	std::chrono::duration<double> elapsed;
+
+	std::vector<int> v;
+	input >> size;
+	for(int i = 0; i < size; ++i){
+		input >> num;
+		v.push_back(num);
+	}
+	start = std::chrono::high_resolution_clock::now();
+	list.insert(v);
+	end = std::chrono::high_resolution_clock::now();
+	elapsed = end - start;
+	std::cout << "Inserted.\n";
+	std::cout << "Insertion time = " << elapsed.count() << "\n\n";
+	input.close();
 
 	std::ifstream in(filename2);
 	in >> size;
 	start = std::chrono::high_resolution_clock::now();
 	for(int i = 0; i < size; ++i){
 		in >> num;
-		list.remove(num);
+		list.find(num);
 	}
+	std::cout << "\n";
 	end = std::chrono::high_resolution_clock::now();
 	elapsed = end - start;
 
 	std::cout << "Deleted.\n";
 	std::cout << "Elapsed time = " << elapsed.count() << "s\n";
+	std::cout << "Time on parallel region = " << list.time << "\n";
+	std::cout << "Remainder time = " << elapsed.count() - list.time << "\n";
 
 	if(list.size() > 0)
 		std::cerr << "ERROR: There are remaining nodes.\n";
+	//std::cout << "size = " << list.size() << "\n";
 	//std::cout << "Printing:\n";
 	//list.print();
 	//std::cout << "\n";

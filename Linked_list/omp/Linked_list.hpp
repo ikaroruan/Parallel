@@ -10,6 +10,9 @@ Linked_list<T>::Linked_list()
 	_front = nullptr;
 	_back = nullptr;
 	_number_of_threads = omp_get_max_threads();
+	_thread_size = new int[_number_of_threads];
+	_tbegin = new List_node<T>*[_number_of_threads + 1];
+	_rebalance_factor = 0;
 }
 
 template<typename T>
@@ -57,6 +60,30 @@ void Linked_list<T>::back(List_node<T>* node)
 }
 
 template<typename T>
+void Linked_list<T>::update_info()
+{
+	int r = size() % _number_of_threads;
+	int range = (size() - r)/_number_of_threads;
+	for(int i = 0; i < _number_of_threads; ++i)
+		_thread_size[i] = range + (i < r ? 1 : 0);
+
+	for(int i = 0; i < _number_of_threads + 1; ++i)
+		_tbegin[i] = nullptr;
+	
+	List_node<T>* p = front();
+	int tid = 0; _tbegin[tid] = front(); int sum = _thread_size[tid]; 
+	for(int i = 0; i < size(); ++i){
+		if(i == sum){
+			_tbegin[++tid] = p;
+			sum = sum + (tid < _number_of_threads ? _thread_size[tid] : 0);
+		}
+		p = p->get_next();
+	}
+	_rebalance_factor = size() - range;
+}
+
+
+template<typename T>
 void Linked_list<T>::push_back(T value)
 {
 	List_node<T>* node = new List_node<T>();
@@ -76,6 +103,7 @@ void Linked_list<T>::push_back(List_node<T>* node)
 		back(node);
 	}	
 	size(size() + 1);
+	update_info();
 }
 
 template<typename T>
@@ -84,6 +112,45 @@ void Linked_list<T>::push_front(T value)
 	List_node<T>* node = new List_node<T>();
 	node->set_value(value);
 	push_front(node);
+}
+
+template<typename T>
+void Linked_list<T>::insert(std::vector<T>& v)
+{
+	Linked_list* list = new Linked_list<T>[_number_of_threads];
+	int tindex[_number_of_threads + 1];
+	
+	// Calculating thread work size and indices
+	int r = v.size() % _number_of_threads;
+	int range = (v.size() - r)/_number_of_threads;
+	tindex[0] = 0;
+	for(int i = 1; i < _number_of_threads; ++i){
+		tindex[i] = tindex[i-1] + range + (i < r ? 1 : 0);
+	}
+	tindex[_number_of_threads] = v.size();
+	
+	// Insert elements on each thread's list
+	int tid;
+	#pragma omp parallel shared(tindex, v, list) private(tid) num_threads(_number_of_threads)
+	{
+		tid = omp_get_thread_num();
+		for(int i = tindex[tid]; i < tindex[tid+1]; ++i){
+			list[tid].push_back(v[i]);
+		}
+	}
+
+	// Concatenating the lists
+	// TODO: Concatenate lists when size != 0 
+	for(int i = 0; i < _number_of_threads-1; ++i){
+		if(i+1 < _number_of_threads){
+			list[i].back()->set_next(list[i+1].front());
+			list[i+1].front()->set_previous(list[i].back());
+		}
+	}
+	front(list[0].front());
+	back(list[_number_of_threads-1].back());
+	size(v.size());
+	update_info();
 }
 
 template<typename T>
@@ -98,6 +165,7 @@ void Linked_list<T>::push_front(List_node<T>* node)
 		front(node);
 	}
 	size(size() + 1);
+	update_info();
 }
 
 template<typename T>
@@ -113,6 +181,7 @@ void Linked_list<T>::pop_back()
 		delete node; size(size() - 1);
 		front(nullptr); back(nullptr);
 	}
+	update_info();
 }
 
 template<typename T>
@@ -128,18 +197,19 @@ void Linked_list<T>::pop_front()
 		delete node; size(size() - 1);
 		front(nullptr); back(nullptr);
 	}
+	update_info();
 }
 
 template<typename T>
 void Linked_list<T>::remove(T value)
 {
 	List_node<T>* node = find(value);
-	if(node == nullptr)
+	/*if(node == nullptr)
 		std::cout << "NULL\n";
 	else if(node->get_value() == value)
 		std::cout << "OK!\n";
 	else
-		std::cout << "WRONG!\n";
+		std::cout << "WRONG!\n";*/
 	
 	remove(node);
 
@@ -148,7 +218,7 @@ void Linked_list<T>::remove(T value)
 template<typename T>
 void Linked_list<T>::remove(List_node<T>* node)
 {
-	if(is_element(node)){
+	if(node != nullptr){
 		if(size() == 1){
 			front(nullptr); back(nullptr);
 		}
@@ -183,40 +253,41 @@ List_node<T>* Linked_list<T>::index(int pos)
 template<typename T>
 List_node<T>* Linked_list<T>::find(T value)
 {
-	//omp_set_dynamic(0);
-	//omp_set_num_threads(4);
-	List_node<T>* node[4];
-	//std::cout << "Number of Threads = " << omp_get_num_threads() << "\nMax Threads =  " << omp_get_max_threads() << std::endl;
+	List_node<T>* node[_number_of_threads];
 	List_node<T>* ans = nullptr;
 	int tid;
-	int list_size = size();
-	List_node<T>* current[4];
+	List_node<T>* current[_number_of_threads];
 
-	#pragma omp parallel shared(node, list_size, current, value) private(tid)
+	double start = omp_get_wtime();
+	//start = std::chrono::high_resolution_clock::now();
+	#pragma omp parallel shared(node, current, value) private(tid) num_threads(_number_of_threads)
 	{
-	tid = omp_get_thread_num();
-	node[tid] = nullptr;
-	#pragma omp for 
-	for(int i = 0; i < list_size; ++i){
-		current[tid] = index(i);
-		if(current[tid] != nullptr){
-			if(current[tid]->get_value() == value){
-				node[tid] = current[tid];
-				//#pragma omp critical
-				//std::cout << "Got here!\n";
-				//std::cout << "   value = " << value << "   value_node = " << node[tid]->get_value() << "\n";
+	 	tid = omp_get_thread_num();
+ 		node[tid] = nullptr;
+		current[tid] = _tbegin[tid];
+		
+		for(int i = 0; i < _thread_size[tid]; ++i){
+			if(current[tid] != nullptr){
+				if(current[tid]->get_value() == value){
+					node[tid] = current[tid];
+				}
+			current[tid] = current[tid]->get_next();
 			}
 		}
 	}
-	}
-
-	for(int i = 0; i < 4; ++i){
+	double end = omp_get_wtime();
+	//end = std::chrono::high_resolution_clock::now();
+	//elapsed = end - start;
+	time = time + (end - start);
+	
+	for(int i = 0; i < _number_of_threads; ++i){
 		if(node[i] != nullptr){
 			ans = node[i];
 			break;
 		}
 	}
-
+	if(size() < _rebalance_factor)
+		update_info();
 	return ans;
 }
 
