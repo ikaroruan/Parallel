@@ -9,6 +9,9 @@ Linked_list<T>::Linked_list()
 	_size = 0;
 	_front = nullptr;
 	_back = nullptr;
+	_thread_size = new int[NUMBER_OF_THREADS];
+	_tbegin = new List_node<T>*[NUMBER_OF_THREADS + 1];
+	_rebalance_factor = 0;
 }
 
 template<typename T>
@@ -17,6 +20,7 @@ Linked_list<T>::~Linked_list()
 	while(size() > 0){
 		pop_front();
 	}
+	delete _thread_size;
 }
 
 template<typename T>
@@ -56,6 +60,75 @@ void Linked_list<T>::back(List_node<T>* node)
 }
 
 template<typename T>
+void Linked_list<T>::update_info()
+{
+	int r = size() % NUMBER_OF_THREADS;
+	int thread_work_size = (size() - r)/NUMBER_OF_THREADS;
+	for(int i = 0; i < NUMBER_OF_THREADS; ++i)
+		_thread_size[i] = thread_work_size + (i < r ? 1 : 0);
+
+	for(int i = 0; i < NUMBER_OF_THREADS + 1; ++i)
+		_tbegin[i] = nullptr;
+
+	List_node<T>* p = front(); 
+	int tid = 0; _tbegin[tid] = p; int sum = _thread_size[tid];
+	for(int i = 0; i < size(); ++i){
+		if(i == sum){
+			_tbegin[++tid] = p;
+			sum = sum + (tid < NUMBER_OF_THREADS ? _thread_size[tid] : 0);
+		}
+		p = p->get_next();
+	}
+	_tbegin[NUMBER_OF_THREADS] = nullptr;
+	_rebalance_factor = size() - thread_work_size;
+}
+
+template<typename T>
+void Linked_list<T>::insert(std::vector<T>& v)
+{	
+	Linked_list* list = new Linked_list<T>[NUMBER_OF_THREADS];
+	std::thread t[NUMBER_OF_THREADS];
+	int tindex[NUMBER_OF_THREADS + 1];
+	
+	// Calculating thread work size and indices
+	int r = v.size() % NUMBER_OF_THREADS;
+	int range = (v.size() - r)/NUMBER_OF_THREADS;
+	tindex[0] = 0;
+	for(int i = 1; i < NUMBER_OF_THREADS; ++i){
+		tindex[i] = tindex[i-1] + range + (i < r ? 1 : 0);
+	}
+	tindex[NUMBER_OF_THREADS] = v.size();
+	
+	// Insert elements on each thread's list
+	for(int tid = 0; tid < NUMBER_OF_THREADS; ++tid){
+		t[tid] = std::thread([=, &list](){
+			for(int i = tindex[tid]; i < tindex[tid+1]; ++i){
+				list[tid].push_back(v[i]);
+			}
+		});
+	}
+	
+	// Joining threads.
+	for(int tid = 0; tid < NUMBER_OF_THREADS; tid++){
+		if(t[tid].joinable())
+			t[tid].join();
+	}
+
+	// Concatenating the lists
+	// TODO: Concatenate lists when size != 0 
+	for(int i = 0; i < NUMBER_OF_THREADS-1; ++i){
+		if(i+1 < NUMBER_OF_THREADS){
+			list[i].back()->set_next(list[i+1].front());
+			list[i+1].front()->set_previous(list[i].back());
+		}
+	}
+	front(list[0].front());
+	back(list[NUMBER_OF_THREADS-1].back());
+	size(size() + v.size());
+	update_info();
+}
+
+template<typename T>
 void Linked_list<T>::push_back(T value)
 {
 	List_node<T>* node = new List_node<T>();
@@ -75,6 +148,7 @@ void Linked_list<T>::push_back(List_node<T>* node)
 		back(node);
 	}	
 	size(size() + 1);
+	update_info();
 }
 
 template<typename T>
@@ -97,6 +171,7 @@ void Linked_list<T>::push_front(List_node<T>* node)
 		front(node);
 	}
 	size(size() + 1);
+	update_info();
 }
 
 template<typename T>
@@ -112,6 +187,7 @@ void Linked_list<T>::pop_back()
 		delete node; size(size() - 1);
 		front(nullptr); back(nullptr);
 	}
+	update_info();
 }
 
 template<typename T>
@@ -127,6 +203,7 @@ void Linked_list<T>::pop_front()
 		delete node; size(size() - 1);
 		front(nullptr); back(nullptr);
 	}
+	update_info();
 }
 
 template<typename T>
@@ -145,7 +222,7 @@ void Linked_list<T>::remove(T value)
 template<typename T>
 void Linked_list<T>::remove(List_node<T>* node)
 {
-	if(is_element(node)){
+	if(node != nullptr){
 		if(size() == 1){
 			front(nullptr); back(nullptr);
 		}
@@ -163,6 +240,8 @@ void Linked_list<T>::remove(List_node<T>* node)
 		}
 		delete node; size(size() - 1);
 	}
+	if(size() < _rebalance_factor)
+		update_info();
 }
 
 template<typename T>
@@ -182,22 +261,14 @@ List_node<T>* Linked_list<T>::find_parallel(T value, List_node<T>* start, List_n
 {
 	List_node<T>* current = start;
 	List_node<T>* node = nullptr;
-	//if(end != nullptr)
-	//	end = end->get_next();
+
 	while(current != end){
+		if(current == nullptr) break;
 		if(current->get_value() == value){
-			//if(node == nullptr){
-				//m.lock();
 				node = current;
-				//m.unlock();
-			//}
-			}
+		}
 		current = current->get_next();
 	}
-//	m.lock();
-//	if(node != nullptr)
-//		std::cout << "   value = " << value << "   node_value = " << node->get_value() << "\n";
-//	m.unlock();
 
 	return node;
 }
@@ -208,30 +279,28 @@ List_node<T>* Linked_list<T>::find(T value)
 	std::thread t[NUMBER_OF_THREADS];
 	List_node<T>* node[NUMBER_OF_THREADS];
 	List_node<T>* ans = nullptr;
-	List_node<T>* start = nullptr;
-	List_node<T>* end = nullptr;
+	
+	std::chrono::high_resolution_clock::time_point start;
+	std::chrono::high_resolution_clock::time_point end;
+	std::chrono::duration<double> elapsed;
 
+	// Starting parallel region.
+	start = std::chrono::high_resolution_clock::now();
 	for(int i = 0; i < NUMBER_OF_THREADS; ++i){
-		start = index((i*size())/NUMBER_OF_THREADS);
-		end = index(((i+1)*size())/NUMBER_OF_THREADS);
 		node[i] = nullptr;
-		//t[i] = std::thread(&Linked_list<T>::find_parallel, this, value, std::ref(node[i]), start, end);
-		t[i] = std::thread([=, &node](){ node[i] = find_parallel(value, start, end);});
+		t[i] = std::thread([=, &node](){ node[i] = find_parallel(value, _tbegin[i], _tbegin[i+1]);});
 	}
 
+	// Joining threads and checking if the value was found.
 	for(int i = 0; i < NUMBER_OF_THREADS; ++i){
 		if(t[i].joinable())
 			t[i].join();
 		if(node[i] != nullptr)
 			ans = node[i];
 	}
-	
-	/*for(int i = 0; i < NUMBER_OF_THREADS; ++i){
-		if(node[i] != nullptr){
-			ans = node[i];
-			break;
-		}
-	}*/
+	end = std::chrono::high_resolution_clock::now();
+	elapsed = end - start;
+	time_parallel = time_parallel + elapsed.count();
 	
 	return ans;
 }

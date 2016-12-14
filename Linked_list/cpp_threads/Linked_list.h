@@ -11,6 +11,7 @@
 #include <iostream>
 #include <thread>
 #include <mutex>
+#include <chrono>
 #include "List_node.h"
 
 template<typename T>
@@ -29,6 +30,7 @@ class Linked_list
 	void push_front(List_node<T>* node);
 	void push_back(T value);
 	void push_front(T value);
+	void insert(std::vector<T>& v);
 
 	// PRE: none.
 	// POST: Pops nodes or elements from the list.
@@ -55,18 +57,26 @@ class Linked_list
 	bool is_element(List_node<T>* node);
 	bool is_element(T value);
 
+	void update_info();
+
 	// Access the member variables.
 	int size();
 	List_node<T>* front();
 	List_node<T>* back();
 	List_node<T>* index(int pos);
 	void print();
+
+	double time_parallel = 0;
+	double time_traversing = 0;
 	
 	private:
 	int _size;
 	List_node<T>* _front;
 	List_node<T>* _back;
+	int* _thread_size;
 	std::mutex m;
+	List_node<T>** _tbegin;
+	int _rebalance_factor;
 	
 	// Modifiers for the member variables.
 	void size(int num);
