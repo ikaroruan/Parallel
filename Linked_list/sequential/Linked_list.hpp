@@ -181,9 +181,13 @@ void Linked_list<T>::remove(List_node<T>* node)
 template<typename T>
 List_node<T>* Linked_list<T>::find(T value)
 {
+	std::chrono::high_resolution_clock::time_point start;
+	std::chrono::high_resolution_clock::time_point end;
+	std::chrono::duration<double> elapsed;
 	List_node<T>* current = front();
 	List_node<T>* node = nullptr;
 
+	start = std::chrono::high_resolution_clock::now();
 	while(current != nullptr){
 		if(current->get_value() == value){
 			if(node == nullptr)
@@ -191,6 +195,9 @@ List_node<T>* Linked_list<T>::find(T value)
 			}
 		current = current->get_next();
 	}
+	end = std::chrono::high_resolution_clock::now();
+	elapsed = end - start;
+	time = time + elapsed.count();
 
 	return node;
 }

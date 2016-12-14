@@ -1,4 +1,9 @@
 #include <iostream>
+#include <vector>
+#include <fstream>
+#include <algorithm>
+#include <string>
+#include <chrono>
 #include "Linked_list.h"
 
 void print_menu()
@@ -13,10 +18,55 @@ void print_menu()
 		  << "Your choice: ";
 }
 
-int main()
+int main(int argc, char** argv)
 {
+	if(argc < 3){
+		std::cerr << "Not enough arguments.\n";
+		return 0;
+	}
+	std::string filename1 = argv[1];
+	std::string filename2 = argv[2];
+	std::ifstream input(filename1);
+	Linked_list<int> list;
+	int size = -1; int num = -1;
+	
+	std::chrono::high_resolution_clock::time_point start;
+	std::chrono::high_resolution_clock::time_point end;
+	std::chrono::duration<double> elapsed;
 
-	int option = -1;
+	input >> size;
+	start = std::chrono::high_resolution_clock::now();
+	for(int i = 0; i < size; ++i){
+		input >> num;
+		list.push_back(num);
+	}
+	end = std::chrono::high_resolution_clock::now();
+	elapsed = end - start;
+	std::cout << "Inserted.\n";
+	std::cout << "Insetion time = " << elapsed.count() << "\n";
+	input.close();
+
+	std::ifstream in(filename2);
+	in >> size;
+	start = std::chrono::high_resolution_clock::now();
+	for(int i = 0; i < size; ++i){
+		in >> num;
+		list.remove(num);
+	}
+	end = std::chrono::high_resolution_clock::now();
+	elapsed = end - start;
+
+	std::cout << "Deleted.\n";
+	std::cout << "Elapsed time = " << elapsed.count() << "s\n";
+	std::cout << "Time on find operation = " << list.time << "\n";
+
+	if(list.size() > 0)
+		std::cerr << "ERROR: There are remaining nodes.\n";
+	//std::cout << "Printing:\n";
+	//list.print();
+	//std::cout << "\n";
+
+	/*int option = -1;
 	Linked_list<int> list;
 	int num;
 
@@ -68,7 +118,7 @@ int main()
 				break;
 		}
 		std::cout << "\n============================\n";
-	}
+	}*/
 	
 	return 0;
 }

@@ -7,6 +7,7 @@
 #define LINKED_LIST_H
 
 #include <iostream>
+#include <chrono>
 #include "List_node.h"
 
 template<typename T>
@@ -55,6 +56,8 @@ class Linked_list
 	List_node<T>* front();
 	List_node<T>* back();
 	void print();
+
+	double time = 0;
 	
 	private:
 	int _size;
