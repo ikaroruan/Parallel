@@ -60,8 +60,8 @@ int main(int argc, char** argv)
 
 	std::cout << "Deleted.\n";
 	std::cout << "Elapsed time = " << elapsed.count() << "s\n";
-	std::cout << "Time on parallel region = " << list.time_parallel << "\n";
-	std::cout << "Remainder time = " << elapsed.count() - list.time_parallel << "\n";
+	std::cout << "Time on parallel region = " << list.time_parallel() << "\n";
+	std::cout << "Remainder time = " << elapsed.count() - list.time_parallel() << "\n";
 
 	if(list.size() > 0)
 		std::cerr << "ERROR: There are remaining nodes.\n";

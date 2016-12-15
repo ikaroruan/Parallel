@@ -13,6 +13,7 @@ Linked_list<T>::Linked_list()
 	_thread_size = new int[_number_of_threads];
 	_tbegin = new List_node<T>*[_number_of_threads + 1];
 	_rebalance_factor = 0;
+	_time_parallel = 0;
 }
 
 template<typename T>
@@ -57,6 +58,12 @@ template<typename T>
 void Linked_list<T>::back(List_node<T>* node)
 {
 	_back = node;
+}
+
+template<typename T>
+double Linked_list<T>::time_parallel()
+{
+	return _time_parallel;
 }
 
 template<typename T>
@@ -278,7 +285,7 @@ List_node<T>* Linked_list<T>::find(T value)
 	double end = omp_get_wtime();
 	//end = std::chrono::high_resolution_clock::now();
 	//elapsed = end - start;
-	time = time + (end - start);
+	_time_parallel = _time_parallel + (end - start);
 	
 	for(int i = 0; i < _number_of_threads; ++i){
 		if(node[i] != nullptr){

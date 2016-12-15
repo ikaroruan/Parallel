@@ -61,7 +61,7 @@ class Linked_list
 	List_node<T>* front();
 	List_node<T>* back();
 	void print();
-	double time = 0;
+	double time_parallel();
 	
 	private:
 	int _size;
@@ -72,6 +72,7 @@ class Linked_list
 	List_node<T>** _tbegin;
 	omp_lock_t m;
 	int _rebalance_factor;
+	double _time_parallel;
 	
 	// Modifiers for the member variables.
 	void size(int num);
