@@ -97,6 +97,7 @@ void Linked_list<T>::update_info()
 	_rebalance_factor = size() - thread_work_size;
 }
 
+// Just for checking performance of this approach compared to sequential code.
 template<typename T>
 void Linked_list<T>::insert(std::vector<T>& v)
 {	
@@ -258,6 +259,7 @@ void Linked_list<T>::remove(List_node<T>* node)
 		update_info();
 }
 
+// This function can be considered depracated.
 template<typename T>
 List_node<T>* Linked_list<T>::index(int pos)
 {

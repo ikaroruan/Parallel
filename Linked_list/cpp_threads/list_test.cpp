@@ -50,10 +50,13 @@ int main(int argc, char** argv)
 
 	std::ifstream in(filename2);
 	in >> size;
+	//List_node<int>* n = nullptr;
 	start = std::chrono::system_clock::now();
 	for(int i = 0; i < size; ++i){
 		in >> num;
 		list.remove(num);
+		//if(n->get_value() != num)
+		//	std::cout << "Error!\n";
 	}
 	end = std::chrono::system_clock::now();
 	elapsed = end - start;
