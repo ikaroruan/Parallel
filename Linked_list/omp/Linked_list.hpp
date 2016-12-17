@@ -263,22 +263,22 @@ List_node<T>* Linked_list<T>::find(T value)
 	List_node<T>* node[_number_of_threads];
 	List_node<T>* ans = nullptr;
 	int tid;
-	List_node<T>* current[_number_of_threads];
+	List_node<T>* current;
 
 	double start = omp_get_wtime();
 	//start = std::chrono::high_resolution_clock::now();
-	#pragma omp parallel shared(node, current, value) private(tid) num_threads(_number_of_threads)
+	#pragma omp parallel shared(node, value) private(tid, current) num_threads(_number_of_threads)
 	{
 	 	tid = omp_get_thread_num();
  		node[tid] = nullptr;
-		current[tid] = _tbegin[tid];
+		current = _tbegin[tid];
 		
 		for(int i = 0; i < _thread_size[tid]; ++i){
-			if(current[tid] != nullptr){
-				if(current[tid]->get_value() == value){
-					node[tid] = current[tid];
+			if(current != nullptr){
+				if(current->get_value() == value){
+					node[tid] = current;
 				}
-			current[tid] = current[tid]->get_next();
+			current = current->get_next();
 			}
 		}
 	}
@@ -293,8 +293,8 @@ List_node<T>* Linked_list<T>::find(T value)
 			break;
 		}
 	}
-	if(size() < _rebalance_factor)
-		update_info();
+	//if(size() < _rebalance_factor)
+	//	update_info();
 	return ans;
 }
 
