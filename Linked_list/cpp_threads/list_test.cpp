@@ -50,21 +50,18 @@ int main(int argc, char** argv)
 
 	std::ifstream in(filename2);
 	in >> size;
-	//List_node<int>* n = nullptr;
 	start = std::chrono::system_clock::now();
 	for(int i = 0; i < size; ++i){
 		in >> num;
 		list.remove(num);
-		//if(n->get_value() != num)
-		//	std::cout << "Error!\n";
 	}
 	end = std::chrono::system_clock::now();
 	elapsed = end - start;
 
 	std::cout << "Deleted.\n";
 	std::cout << "Elapsed time = " << elapsed.count() << "s\n";
-	std::cout << "Time on parallel region = " << list.time_parallel() << "\n";
-	std::cout << "Remainder time = " << elapsed.count() - list.time_parallel() << "\n";
+	std::cout << "Time on parallel region = " << list.time_parallel << "\n";
+	std::cout << "Remainder time = " << elapsed.count() - list.time_parallel << "\n";
 
 	if(list.size() > 0)
 		std::cerr << "ERROR: There are remaining nodes.\n";

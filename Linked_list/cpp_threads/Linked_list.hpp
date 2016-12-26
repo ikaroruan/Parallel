@@ -12,8 +12,6 @@ Linked_list<T>::Linked_list()
 	_thread_size = new int[NUMBER_OF_THREADS];
 	_tbegin = new List_node<T>*[NUMBER_OF_THREADS + 1];
 	_rebalance_factor = 0;
-	_time_parallel = 0;
-	_time_traversing = 0;
 }
 
 template<typename T>
@@ -62,18 +60,6 @@ void Linked_list<T>::back(List_node<T>* node)
 }
 
 template<typename T>
-double Linked_list<T>::time_parallel()
-{
-	return _time_parallel;
-}
-
-template<typename T>
-double Linked_list<T>::time_traversing()
-{
-	return _time_traversing;
-}
-
-template<typename T>
 void Linked_list<T>::update_info()
 {
 	int r = size() % NUMBER_OF_THREADS;
@@ -97,7 +83,6 @@ void Linked_list<T>::update_info()
 	_rebalance_factor = size() - thread_work_size;
 }
 
-// Just for checking performance of this approach compared to sequential code.
 template<typename T>
 void Linked_list<T>::insert(std::vector<T>& v)
 {	
@@ -259,7 +244,6 @@ void Linked_list<T>::remove(List_node<T>* node)
 		update_info();
 }
 
-// This function can be considered depracated.
 template<typename T>
 List_node<T>* Linked_list<T>::index(int pos)
 {
@@ -316,7 +300,7 @@ List_node<T>* Linked_list<T>::find(T value)
 	}
 	end = std::chrono::high_resolution_clock::now();
 	elapsed = end - start;
-	_time_parallel = _time_parallel + elapsed.count();
+	time_parallel = time_parallel + elapsed.count();
 	
 	return ans;
 }

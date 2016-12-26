@@ -65,9 +65,9 @@ class Linked_list
 	List_node<T>* back();
 	List_node<T>* index(int pos);
 	void print();
-	double time_parallel();
-	double time_traversing();
 
+	double time_parallel = 0;
+	double time_traversing = 0;
 	
 	private:
 	int _size;
@@ -77,8 +77,6 @@ class Linked_list
 	std::mutex m;
 	List_node<T>** _tbegin;
 	int _rebalance_factor;
-	double _time_parallel;
-	double _time_traversing;
 	
 	// Modifiers for the member variables.
 	void size(int num);
