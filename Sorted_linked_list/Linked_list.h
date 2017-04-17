@@ -41,8 +41,8 @@ class Linked_list
 	void insert_front(List_node<T>* new_node);
 	void insert_middle(List_node<T>* new_node);
 	void insert_back(List_node<T>* new_node);
-	bool parallel_insert_middle(List_node<T>* new_node);
-	bool try_parallel_insert(List_node<T>* new_node);
+	bool parallel_insert_middle(List_node<T>* new_node, int* priority);
+	bool try_parallel_insert(List_node<T>* new_node, int* priority);
 	int check_insertion_type(List_node<T>* node);
 
 	// PRE: none.

@@ -239,48 +239,50 @@ void Linked_list<T>::parallel_insert(std::vector<T> v)
 	int tbegin[_number_of_threads+1];
 	int tsize = (sequential_size - v.size())/_number_of_threads;
 	int remainder = (sequential_size - v.size())%_number_of_threads;
+	int priority[_number_of_threads];
 	for(int i = 0; i < _number_of_threads; ++i){
+		priority[i] = i;
 		_thread_size[i] = tsize + (i < remainder ? 1 : 0);
 		tbegin[i] = (i == 0 ? 0 : (tbegin[i-1] + _thread_size[i-1]));
 	}
 	tbegin[_number_of_threads] = v.size();
 
 	// Beginning of Parallel Region.
-	#pragma omp parallel shared(tbegin) num_threads(_number_of_threads)
+	#pragma omp parallel shared(tbegin) private(priority) num_threads(_number_of_threads)
 	{
 		int tid = omp_get_thread_num();
 		std::queue<List_node<T>*> queue;
 
 		for(int i = tbegin[tid]; i < tbegin[tid+1]; ++i){
 			List_node<T>* new_node = new List_node<T>(v[i]);
-			if(!try_parallel_insert(new_node))
+			if(!try_parallel_insert(new_node, priority))
 				queue.push(new_node);
 		}
 
 		while(!queue.empty()){
 			List_node<T>* to_insert = queue.front();
 			queue.pop();
-			if(!try_parallel_insert(to_insert))
+			if(!try_parallel_insert(to_insert, priority))
 				queue.push(to_insert);
 		}
 	}// End of Parallel Region.
 }
 
 template<typename T>
-bool Linked_list<T>::parallel_insert_middle(List_node<T>* new_node)
+bool Linked_list<T>::parallel_insert_middle(List_node<T>* new_node, int* priority)
 {
 	List_node<T>* current_node = front();
 
-	if(!new_node->try_lock())
+	if(!new_node->lock(priority))
 		return false;
-	if(!current_node->try_lock()){
+	if(!current_node->lock(priority)){
 		new_node->unlock();
 		return false;
 	}
 	
 	// Find node to insert before it.
 	while(current_node->get_value() < new_node->get_value()){
-		if(!current_node->get_next()->try_lock()){
+		if(!current_node->get_next()->lock(priority)){
 			current_node->unlock();
 			new_node->unlock();
 			return false;
@@ -289,7 +291,7 @@ bool Linked_list<T>::parallel_insert_middle(List_node<T>* new_node)
 		current_node->get_previous()->unlock();
 	}
 
-	if(!current_node->get_previous()->try_lock()){
+	if(!current_node->get_previous()->lock(priority)){
 		current_node->unlock();
 		new_node->unlock();
 		return false;
@@ -308,7 +310,7 @@ bool Linked_list<T>::parallel_insert_middle(List_node<T>* new_node)
 }
 
 template<typename T>
-bool Linked_list<T>::try_parallel_insert(List_node<T>* new_node)
+bool Linked_list<T>::try_parallel_insert(List_node<T>* new_node, int* priority)
 {
 	Insertion_type tp = static_cast<Insertion_type>(check_insertion_type(new_node));
 	List_node<T>* to_unlock = nullptr;
@@ -319,7 +321,7 @@ bool Linked_list<T>::try_parallel_insert(List_node<T>* new_node)
 			std::cerr << "ERROR: Trying to insert first again. (parallel_insert)\n";
 			break;
 		case FRONT:
-			if(!front()->try_lock())
+			if(!front()->lock(priority))
 				return false;
 			else{
 				to_unlock = front();
@@ -328,11 +330,11 @@ bool Linked_list<T>::try_parallel_insert(List_node<T>* new_node)
 			}
 			break;
 		case MIDDLE:
-			if(!parallel_insert_middle(new_node))
+			if(!parallel_insert_middle(new_node, priority))
 				return false;
 			break;
 		case BACK:
-			if(!back()->try_lock())
+			if(!back()->lock(priority))
 				return false;
 			else{
 				to_unlock = back();

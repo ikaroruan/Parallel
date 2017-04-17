@@ -134,6 +134,7 @@ bool Lock::lock(int* priority)
 		else if(priority[tid] < priority[owner()]){
 			done = true;
 			to_return = false;
+			priority[tid] = (priority[tid] + 1) % (2*omp_get_num_threads());
 		}
 		else{
 			if(tid == owner()){
